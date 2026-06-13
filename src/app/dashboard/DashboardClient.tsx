@@ -3,10 +3,21 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+interface MetricsData {
+  vo2max: string
+  lt2Pace: string
+  lt2Hr: number
+  forceScore: string
+  forceDelta: string | undefined
+  forceDeltaColor: 'green' | 'red' | 'neutral'
+  hasRealData: boolean
+}
+
 interface Props {
   email: string
   fullName: string | null
   hasProfile: boolean
+  metrics: MetricsData
   signOut: () => Promise<void>
 }
 
@@ -83,40 +94,14 @@ const NAV_LINKS = [
   { href: '/history', label: 'History' },
 ]
 
-const METRICS = [
-  {
-    label: 'VO2max',
-    value: '49.2',
-    unit: 'ml/kg/min',
-    delta: '↑ +1.4 from baseline',
-    deltaColor: 'green' as const,
-    sub: 'Estimated from last threshold test',
-  },
-  {
-    label: 'LT2 Pace',
-    value: '5:00',
-    unit: '/km',
-    delta: undefined,
-    deltaColor: 'neutral' as const,
-    sub: 'At 160 bpm threshold',
-  },
-  {
-    label: 'Force Score',
-    value: '2.32',
-    unit: 'x BW',
-    delta: '↓ Left quad deficit 23%',
-    deltaColor: 'red' as const,
-    sub: 'Single-leg press @ 90° knee angle',
-  },
-  {
-    label: 'Weekly Load',
-    value: '62',
-    unit: 'km',
-    delta: '↑ 78% plan adherence',
-    deltaColor: 'green' as const,
-    sub: 'Across 6 sessions this week',
-  },
-]
+const STATIC_WEEKLY_METRIC = {
+  label: 'Weekly Load',
+  value: '62',
+  unit: 'km',
+  delta: '↑ 78% plan adherence',
+  deltaColor: 'green' as const,
+  sub: 'Across 6 sessions this week',
+}
 
 type ProgramStatus = 'in_progress' | 'complete' | 'upcoming'
 
@@ -179,7 +164,7 @@ const ALERTS = [
   },
 ]
 
-export default function DashboardClient({ email, fullName, hasProfile, signOut }: Props) {
+export default function DashboardClient({ email, fullName, hasProfile, metrics, signOut }: Props) {
   const [greeting, setGreeting] = useState('')
 
   useEffect(() => {
@@ -255,10 +240,38 @@ export default function DashboardClient({ email, fullName, hasProfile, signOut }
         </div>
 
         {/* Metric cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {METRICS.map((m) => (
-            <MetricCard key={m.label} {...m} />
-          ))}
+        <div className="space-y-2">
+          {!metrics.hasRealData && (
+            <p className="text-xs text-zinc-500 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 inline-block" />
+              Sample data — no lab results on file yet
+            </p>
+          )}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard
+              label="VO2max"
+              value={metrics.vo2max}
+              unit="ml/kg/min"
+              delta={metrics.hasRealData ? undefined : '↑ +1.4 from baseline'}
+              deltaColor="green"
+              sub="Estimated from last threshold test"
+            />
+            <MetricCard
+              label="LT2 Pace"
+              value={metrics.lt2Pace}
+              unit="/km"
+              sub={`At ${metrics.lt2Hr} bpm threshold`}
+            />
+            <MetricCard
+              label="Force Score"
+              value={metrics.forceScore}
+              unit="x BW"
+              delta={metrics.forceDelta}
+              deltaColor={metrics.forceDeltaColor}
+              sub="IMTP relative peak force"
+            />
+            <MetricCard {...STATIC_WEEKLY_METRIC} />
+          </div>
         </div>
 
         {/* Notification banner */}
