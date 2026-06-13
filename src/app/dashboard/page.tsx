@@ -34,7 +34,7 @@ export default async function DashboardPage() {
   if (!user) redirect('/login')
 
   const [profileRes, labRes, forceRes, stravaTokenRes, stravaActivitiesRes] = await Promise.all([
-    supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).single(),
+    supabase.from('profiles').select('full_name, avatar_url, role').eq('id', user.id).single(),
     supabase
       .from('lab_results')
       .select('vo2max, lt2_hr, lt2_pace, test_date')
@@ -133,6 +133,7 @@ export default async function DashboardPage() {
       fullName={profile?.full_name ?? null}
       avatarUrl={avatarUrl}
       hasProfile={hasProfile}
+      userRole={profile?.role ?? 'client'}
       metrics={metrics}
       stravaConnected={stravaConnected}
       recentActivities={recentActivities}

@@ -20,6 +20,7 @@ interface Props {
   fullName: string | null
   avatarUrl: string | null
   hasProfile: boolean
+  userRole: string
   metrics: MetricsData
   stravaConnected: boolean
   recentActivities: StravaActivity[]
@@ -169,7 +170,7 @@ const ALERTS = [
   },
 ]
 
-export default function DashboardClient({ email, fullName, avatarUrl, hasProfile, metrics, stravaConnected, recentActivities, signOut }: Props) {
+export default function DashboardClient({ email, fullName, avatarUrl, hasProfile, userRole, metrics, stravaConnected, recentActivities, signOut }: Props) {
   const [greeting, setGreeting] = useState('')
 
   useEffect(() => {
@@ -195,6 +196,9 @@ export default function DashboardClient({ email, fullName, avatarUrl, hasProfile
             {NAV_LINKS.map((l) => (
               <NavLink key={l.href} href={l.href} label={l.label} active={l.href === '/dashboard'} />
             ))}
+            {(userRole === 'practitioner' || userRole === 'admin') && (
+              <NavLink href="/practitioner" label="Practitioner Portal" />
+            )}
           </div>
         </div>
         <div className="flex items-center gap-3">

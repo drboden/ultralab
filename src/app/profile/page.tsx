@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import ProfileForm from './ProfileForm'
+import PractitionerAccess from './PractitionerAccess'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -9,11 +10,34 @@ export default async function ProfilePage() {
 
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, date_of_birth, sport, phone, avatar_url')
-    .eq('id', user.id)
-    .single()
+  const [profileRes, accessRes] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('full_name, date_of_birth, sport, phone, avatar_url')
+      .eq('id', user.id)
+      .single(),
+    supabase
+      .from('practitioner_access')
+      .select('id, practitioner_id, status')
+      .eq('client_id', user.id)
+      .order('granted_at', { ascending: false }),
+  ])
+
+  const profile = profileRes.data
+  const accessRows = accessRes.data ?? []
+
+  // Fetch profiles for each practitioner
+  const practIds = accessRows.map((r) => r.practitioner_id)
+  const { data: practProfiles } = practIds.length > 0
+    ? await supabase.from('profiles').select('id, full_name').in('id', practIds)
+    : { data: [] }
+
+  const practProfileMap = Object.fromEntries((practProfiles ?? []).map((p) => [p.id, p]))
+
+  const enrichedAccess = accessRows.map((r) => ({
+    ...r,
+    profiles: practProfileMap[r.practitioner_id] ?? null,
+  }))
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] px-4 py-12">
@@ -38,6 +62,8 @@ export default async function ProfilePage() {
           existingProfile={profile}
           redirectTo="/dashboard"
         />
+
+        <PractitionerAccess userId={user.id} initialList={enrichedAccess} />
       </div>
     </div>
   )
