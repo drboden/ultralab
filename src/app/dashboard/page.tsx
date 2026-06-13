@@ -9,13 +9,31 @@ function formatPace(seconds: number | null): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+export interface StravaActivity {
+  id: number
+  name: string
+  type: string
+  start_date: string
+  distance_km: string
+  duration: string
+  average_heartrate: number | null
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
 
-  const [profileRes, labRes, forceRes] = await Promise.all([
+  const [profileRes, labRes, forceRes, stravaTokenRes, stravaActivitiesRes] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', user.id).single(),
     supabase
       .from('lab_results')
@@ -31,6 +49,17 @@ export default async function DashboardPage() {
       .order('test_date', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from('strava_tokens')
+      .select('athlete_id')
+      .eq('user_id', user.id)
+      .maybeSingle(),
+    supabase
+      .from('strava_activities')
+      .select('id, name, type, start_date, distance_meters, moving_time_seconds, average_heartrate')
+      .eq('user_id', user.id)
+      .order('start_date', { ascending: false })
+      .limit(3),
   ])
 
   const profile = profileRes.data
@@ -38,8 +67,19 @@ export default async function DashboardPage() {
   const force = forceRes.data
   const hasProfile = !!profile?.full_name
   const hasRealData = !!(lab || force)
+  const stravaConnected = !!stravaTokenRes.data
 
-  // Derive quad asymmetry delta if we have force data
+  const recentActivities: StravaActivity[] = (stravaActivitiesRes.data ?? []).map((a) => ({
+    id: a.id,
+    name: a.name ?? 'Activity',
+    type: a.type ?? 'Run',
+    start_date: a.start_date,
+    distance_km: a.distance_meters ? (a.distance_meters / 1000).toFixed(1) : '—',
+    duration: a.moving_time_seconds ? formatDuration(a.moving_time_seconds) : '—',
+    average_heartrate: a.average_heartrate ?? null,
+  }))
+
+  // Derive force metrics
   let forceScore = '2.32'
   let forceDelta: string | undefined = '↓ Left quad deficit 23%'
   let forceDeltaColor: 'green' | 'red' | 'neutral' = 'red'
@@ -83,6 +123,8 @@ export default async function DashboardPage() {
       fullName={profile?.full_name ?? null}
       hasProfile={hasProfile}
       metrics={metrics}
+      stravaConnected={stravaConnected}
+      recentActivities={recentActivities}
       signOut={signOut}
     />
   )

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+import type { StravaActivity } from './page'
+
 interface MetricsData {
   vo2max: string
   lt2Pace: string
@@ -18,6 +20,8 @@ interface Props {
   fullName: string | null
   hasProfile: boolean
   metrics: MetricsData
+  stravaConnected: boolean
+  recentActivities: StravaActivity[]
   signOut: () => Promise<void>
 }
 
@@ -164,7 +168,7 @@ const ALERTS = [
   },
 ]
 
-export default function DashboardClient({ email, fullName, hasProfile, metrics, signOut }: Props) {
+export default function DashboardClient({ email, fullName, hasProfile, metrics, stravaConnected, recentActivities, signOut }: Props) {
   const [greeting, setGreeting] = useState('')
 
   useEffect(() => {
@@ -393,6 +397,68 @@ export default function DashboardClient({ email, fullName, hasProfile, metrics, 
             ))}
           </div>
         </SectionCard>
+
+        {/* Strava section */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-zinc-300">Strava</h3>
+            {stravaConnected ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#1D9E75]/10 border border-[#1D9E75]/30 text-[#1D9E75] text-xs font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
+                Connected
+              </span>
+            ) : (
+              <Link
+                href="/api/strava/connect"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-orange-500 text-orange-400 hover:bg-orange-500/10 text-xs font-semibold transition-colors"
+              >
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
+                </svg>
+                Connect Strava
+              </Link>
+            )}
+          </div>
+
+          {stravaConnected && recentActivities.length > 0 ? (
+            <div className="space-y-2">
+              {recentActivities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-zinc-800/50 border border-zinc-800"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-base leading-none flex-shrink-0">
+                      {activity.type === 'Run' ? '🏃' : activity.type === 'Ride' ? '🚴' : activity.type === 'Swim' ? '🏊' : '⚡'}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm text-zinc-200 truncate">{activity.name}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        {new Date(activity.start_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 flex-shrink-0 text-right">
+                    <div>
+                      <p className="text-sm font-medium text-white">{activity.distance_km} km</p>
+                      <p className="text-xs text-zinc-500">{activity.duration}</p>
+                    </div>
+                    {activity.average_heartrate && (
+                      <div className="hidden sm:block">
+                        <p className="text-sm font-medium text-white">{Math.round(activity.average_heartrate)}</p>
+                        <p className="text-xs text-zinc-500">avg bpm</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : stravaConnected ? (
+            <p className="text-xs text-zinc-500">No activities synced yet. <Link href="/api/strava/sync" className="text-[#1D9E75] hover:underline">Sync now</Link></p>
+          ) : (
+            <p className="text-xs text-zinc-500">Connect your Strava account to see your recent activities here.</p>
+          )}
+        </div>
 
       </div>
     </div>
