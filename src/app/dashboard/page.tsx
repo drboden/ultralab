@@ -34,7 +34,7 @@ export default async function DashboardPage() {
   if (!user) redirect('/login')
 
   const [profileRes, labRes, forceRes, stravaTokenRes, stravaActivitiesRes] = await Promise.all([
-    supabase.from('profiles').select('full_name').eq('id', user.id).single(),
+    supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).single(),
     supabase
       .from('lab_results')
       .select('vo2max, lt2_hr, lt2_pace, test_date')
@@ -68,6 +68,16 @@ export default async function DashboardPage() {
   const hasProfile = !!profile?.full_name
   const hasRealData = !!(lab || force)
   const stravaConnected = !!stravaTokenRes.data
+
+  // Construct avatar URL — use DB value if present, otherwise derive from known bucket path
+  const dbAvatarUrl = profile?.avatar_url ?? null
+  const derivedAvatarUrl = `https://fasebwgnroyaobsygiwv.supabase.co/storage/v1/object/public/avatars/${user!.id}/avatar.jpg`
+  const avatarUrl = dbAvatarUrl ?? null
+
+  console.log('[Dashboard] user.id:', user!.id)
+  console.log('[Dashboard] profile.avatar_url from DB:', dbAvatarUrl)
+  console.log('[Dashboard] derived URL:', derivedAvatarUrl)
+  console.log('[Dashboard] avatarUrl passed to client:', avatarUrl)
 
   const recentActivities: StravaActivity[] = (stravaActivitiesRes.data ?? []).map((a) => ({
     id: a.id,
@@ -121,6 +131,7 @@ export default async function DashboardPage() {
     <DashboardClient
       email={user.email ?? ''}
       fullName={profile?.full_name ?? null}
+      avatarUrl={avatarUrl}
       hasProfile={hasProfile}
       metrics={metrics}
       stravaConnected={stravaConnected}

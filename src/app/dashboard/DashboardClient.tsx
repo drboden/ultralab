@@ -18,6 +18,7 @@ interface MetricsData {
 interface Props {
   email: string
   fullName: string | null
+  avatarUrl: string | null
   hasProfile: boolean
   metrics: MetricsData
   stravaConnected: boolean
@@ -168,7 +169,7 @@ const ALERTS = [
   },
 ]
 
-export default function DashboardClient({ email, fullName, hasProfile, metrics, stravaConnected, recentActivities, signOut }: Props) {
+export default function DashboardClient({ email, fullName, avatarUrl, hasProfile, metrics, stravaConnected, recentActivities, signOut }: Props) {
   const [greeting, setGreeting] = useState('')
 
   useEffect(() => {
@@ -177,6 +178,8 @@ export default function DashboardClient({ email, fullName, hasProfile, metrics, 
 
   const initial = (fullName ?? email).charAt(0).toUpperCase()
   const firstName = fullName ? fullName.split(' ')[0] : null
+
+  console.log('[DashboardClient] avatarUrl received:', avatarUrl)
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
@@ -195,12 +198,22 @@ export default function DashboardClient({ email, fullName, hasProfile, metrics, 
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-full bg-[#1D9E75]/20 border border-[#1D9E75]/40 flex items-center justify-center text-xs font-bold text-[#1D9E75] select-none"
-            title={email}
-          >
-            {initial}
-          </div>
+          <Link href="/profile" title={email}>
+            {avatarUrl ? (
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-zinc-700 hover:border-[#1D9E75] transition-colors flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`${avatarUrl}?t=${Date.now()}`}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-[#1D9E75]/20 border border-[#1D9E75]/40 hover:border-[#1D9E75] flex items-center justify-center text-xs font-bold text-[#1D9E75] select-none transition-colors">
+                {initial}
+              </div>
+            )}
+          </Link>
           <form action={signOut}>
             <button
               type="submit"
