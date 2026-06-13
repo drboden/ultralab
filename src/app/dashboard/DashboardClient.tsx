@@ -242,6 +242,24 @@ export default function DashboardClient({ email, signOut }: Props) {
           ))}
         </div>
 
+        {/* Notification banner */}
+        <div className="rounded-xl border border-[#3B82F6] bg-[#1E3A5F] px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#3B82F6]/20 border border-[#3B82F6]/30 flex items-center justify-center text-[#3B82F6]">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">VO₂max retest due in 31 days</p>
+              <p className="text-xs text-blue-300/70 mt-0.5">14 July 2026 · ULTRA Lab · ~90 minutes</p>
+            </div>
+          </div>
+          <button className="flex-shrink-0 px-4 py-2 rounded-lg border border-[#3B82F6] text-white text-sm font-medium hover:bg-[#3B82F6]/20 transition-colors">
+            Book Now
+          </button>
+        </div>
+
         {/* Middle row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
