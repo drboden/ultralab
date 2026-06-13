@@ -5,6 +5,8 @@ import Link from 'next/link'
 
 interface Props {
   email: string
+  fullName: string | null
+  hasProfile: boolean
   signOut: () => Promise<void>
 }
 
@@ -177,14 +179,15 @@ const ALERTS = [
   },
 ]
 
-export default function DashboardClient({ email, signOut }: Props) {
+export default function DashboardClient({ email, fullName, hasProfile, signOut }: Props) {
   const [greeting, setGreeting] = useState('')
 
   useEffect(() => {
     setGreeting(getGreeting())
   }, [])
 
-  const initial = email.charAt(0).toUpperCase()
+  const initial = (fullName ?? email).charAt(0).toUpperCase()
+  const firstName = fullName ? fullName.split(' ')[0] : null
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
@@ -222,11 +225,27 @@ export default function DashboardClient({ email, signOut }: Props) {
 
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
 
+        {/* Profile incomplete banner */}
+        {!hasProfile && (
+          <div className="rounded-xl border border-amber-400/25 bg-amber-400/5 px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+              <p className="text-sm text-amber-300">Complete your profile to personalise your dashboard</p>
+            </div>
+            <Link
+              href="/profile/setup"
+              className="flex-shrink-0 text-xs font-medium text-amber-300 border border-amber-400/40 hover:bg-amber-400/10 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Set up profile →
+            </Link>
+          </div>
+        )}
+
         {/* Greeting */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight">
-              {greeting}
+              {greeting}{firstName ? `, ${firstName}` : ''}
             </h1>
           </div>
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/25 text-amber-400 text-xs font-medium">

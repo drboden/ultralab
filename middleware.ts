@@ -24,16 +24,34 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+  const { pathname } = request.nextUrl
 
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+  // Unauthenticated users can't access protected routes
+  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/profile'))) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // Authenticated users without a profile are sent to setup
+  // (except if they're already on /profile/setup to avoid a redirect loop)
+  if (user && pathname.startsWith('/dashboard') && !pathname.startsWith('/profile/setup')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.full_name) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/profile/setup'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: ['/dashboard/:path*', '/profile/:path*'],
 }

@@ -6,9 +6,15 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect('/login')
-  }
+  if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .single()
+
+  const hasProfile = !!profile?.full_name
 
   async function signOut() {
     'use server'
@@ -17,5 +23,12 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  return <DashboardClient email={user.email ?? ''} signOut={signOut} />
+  return (
+    <DashboardClient
+      email={user.email ?? ''}
+      fullName={profile?.full_name ?? null}
+      hasProfile={hasProfile}
+      signOut={signOut}
+    />
+  )
 }
